@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -37,30 +38,45 @@ CREATE TABLE profiles (
   isMain $boolType
 )
     ''');
+    debugPrint('Database created with table profiles');
   }
 
   Future<void> insertProfile(Map<String, dynamic> profile) async {
     final db = await database;
+    final existingProfiles = await getProfiles();
+
+    // Check if this is the first profile being added
+    if (existingProfiles.isEmpty) {
+      profile['isMain'] = 1; // Set the first profile as main profile
+    } else {
+      profile['isMain'] = 0; // Additional profiles are not main profiles
+    }
+
     await db.insert(
       'profiles',
       profile,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    debugPrint('Inserted profile: $profile');
   }
 
   Future<List<Map<String, dynamic>>> getProfiles() async {
     final db = await database;
-    return await db.query('profiles');
+    final profiles = await db.query('profiles');
+    debugPrint('Fetched profiles: $profiles');
+    return profiles;
   }
 
   Future<void> setMainProfile(int id) async {
-    final db = await database;
+    final db = await instance.database;
     await db.update('profiles', {'isMain': 0}, where: 'isMain = 1');
     await db.update('profiles', {'isMain': 1}, where: 'id = ?', whereArgs: [id]);
+    debugPrint('Set profile $id as main profile');
   }
 
   Future<void> deleteProfile(int id) async {
-    final db = await database;
+    final db = await instance.database;
     await db.delete('profiles', where: 'id = ?', whereArgs: [id]);
+    debugPrint('Deleted profile: $id');
   }
 }

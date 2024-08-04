@@ -5,7 +5,7 @@ import 'meal_plan_screen.dart';
 import 'name_age_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -58,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const MealPlanScreen(userName: '')),
+                  MaterialPageRoute(builder: (context) => MealPlanScreen(userName: '')),
                 );
               },
             ),
@@ -236,6 +236,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await DatabaseHelper.instance.deleteProfile(id);
     setState(() {
       _profilesFuture = DatabaseHelper.instance.getProfiles();
-    });
-  }
+});
+}
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Ensure this is present
-// Removed unused import 'dart:math';
+import 'package:table_calendar/table_calendar.dart';
 
 class MealPlanScreen extends StatefulWidget {
   final String userName;
@@ -15,9 +14,11 @@ class MealPlanScreenState extends State<MealPlanScreen> {
   bool _isBreakfastOn = true;
   bool _isLunchOn = true;
   bool _isDinnerOn = true;
-  final DateTime _today = DateTime.now(); // Marked as final
-  DateTime? _startDate;
-  DateTime? _endDate;
+  final DateTime _today = DateTime.now();
+  DateTime? _selectedDay;
+  DateTime? _focusedDay;
+  DateTime? _rangeStart;
+  DateTime? _rangeEnd;
   bool _showTip = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -99,84 +100,57 @@ class MealPlanScreenState extends State<MealPlanScreen> {
   }
 
   Widget _buildCalendar() {
-    DateTime firstDayOfMonth = DateTime(_today.year, _today.month, 1);
-    int daysInMonth = DateTime(_today.year, _today.month + 1, 0).day;
-
-    List<Widget> calendarDays = [];
-    for (int i = 0; i < daysInMonth; i++) {
-      DateTime date = firstDayOfMonth.add(Duration(days: i));
-      calendarDays.add(
-        GestureDetector(
-          onTapDown: (_) {
-            _onDateTapDown(date);
-          },
-          onTapUp: (_) {
-            _onDateTapUp(date);
-          },
-          child: Container(
-            margin: const EdgeInsets.all(4.0),
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: _getDateBackgroundColor(date),
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Center(
-              child: Text(
-                DateFormat('d').format(date),
-                style: TextStyle(
-                  color: date.isBefore(_today) ? Colors.grey : Colors.black,
-                  fontWeight: date == _today ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
+    return TableCalendar(
+      firstDay: DateTime.utc(2000, 1, 1),
+      lastDay: DateTime.utc(2030, 12, 31),
+      focusedDay: _focusedDay ?? _today,
+      selectedDayPredicate: (day) {
+        return isSameDay(_selectedDay, day);
+      },
+      rangeStartDay: _rangeStart,
+      rangeEndDay: _rangeEnd,
+      onDaySelected: (selectedDay, focusedDay) {
+        if (!isSameDay(_selectedDay, selectedDay)) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+            _rangeStart = null; // Important to clean those
+            _rangeEnd = null;
+          });
+        }
+      },
+      onRangeSelected: (start, end, focusedDay) {
+        setState(() {
+          _selectedDay = null;
+          _focusedDay = focusedDay;
+          _rangeStart = start;
+          _rangeEnd = end;
+        });
+      },
+      calendarFormat: CalendarFormat.month,
+      rangeSelectionMode: RangeSelectionMode.enforced,
+      calendarStyle: CalendarStyle(
+        outsideDaysVisible: false,
+        selectedDecoration: BoxDecoration(
+          color: Colors.blue,
+          shape: BoxShape.circle,
         ),
-      );
-    }
-
-    return GridView.count(
-      crossAxisCount: 7,
-      children: calendarDays,
-    );
-  }
-
-  void _onDateTapDown(DateTime date) {
-    if (date.isBefore(_today)) {
-      _showError('You cannot plan meals before today\'s date.');
-      return;
-    }
-    setState(() {
-      _startDate = date;
-      _endDate = date;
-    });
-  }
-
-  void _onDateTapUp(DateTime date) {
-    if (date.isBefore(_today)) {
-      _showError('You cannot plan meals before today\'s date.');
-      return;
-    }
-    setState(() {
-      _endDate = date;
-    });
-  }
-
-  Color _getDateBackgroundColor(DateTime date) {
-    if (date == _today) {
-      return Colors.grey[400]!;
-    }
-    if (_startDate != null && _endDate != null && date.isAfter(_startDate!) && date.isBefore(_endDate!)) {
-      return Colors.grey[300]!;
-    }
-    return Colors.white;
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        todayDecoration: BoxDecoration(
+          color: Colors.orange,
+          shape: BoxShape.circle,
+        ),
+        rangeStartDecoration: BoxDecoration(
+          color: Colors.green,
+          shape: BoxShape.circle,
+        ),
+        rangeEndDecoration: BoxDecoration(
+          color: Colors.green,
+          shape: BoxShape.circle,
+        ),
+        withinRangeDecoration: BoxDecoration(
+          color: Colors.lightGreenAccent,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }

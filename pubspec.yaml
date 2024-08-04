@@ -16,6 +16,7 @@ dependencies:
   flutter_emoji: ^2.0.0
   csv: ^5.0.0
   intl: ^0.17.0  # Add this line
+  table_calendar: ^3.0.1 
 
 
 dev_dependencies:
