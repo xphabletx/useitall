@@ -5,7 +5,7 @@ import 'allergies_diet_screen.dart';
 class NameAgeScreen extends StatefulWidget {
   final Map<String, dynamic>? profile;
 
-  const NameAgeScreen({Key? key, this.profile}) : super(key: key);
+  const NameAgeScreen({super.key, this.profile});
 
   @override
   _NameAgeScreenState createState() => _NameAgeScreenState();

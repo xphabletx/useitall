@@ -5,7 +5,7 @@ import 'meal_plan_screen.dart';
 import 'name_age_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -43,24 +43,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.account_circle),
               title: const Text('Profile'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              leading: const Icon(Icons.restaurant_menu),
+              title: const Text('Planner'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MealPlanScreen(userName: '')),
+                );
               },
             ),
           ],
@@ -77,65 +76,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: Text('No profiles found.'));
           } else {
             final profiles = snapshot.data!;
-            Map<String, dynamic>? mainProfile;
-            try {
-              mainProfile = profiles.firstWhere((profile) => profile['isMain'] == 1);
-            } catch (e) {
-              // Handle case where no main profile is found
-            }
             return Column(
               children: [
-                if (mainProfile != null)
-                  Card(
-                    color: Colors.grey[200],
-                    margin: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      title: Text(
-                        mainProfile['name'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: const Text('is the main profile'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          // Edit main profile
-                        },
-                      ),
-                    ),
-                  ),
                 Expanded(
                   child: ListView.builder(
+                    padding: const EdgeInsets.all(8.0),
                     itemCount: profiles.length,
                     itemBuilder: (context, index) {
                       final profile = profiles[index];
-                      return Card(
-                        color: profile['isMain'] == 1 ? Colors.grey[300] : null,
-                        margin: const EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text(profile['name']),
-                          subtitle: Text(
-                            'Allergies: ${profile['allergies']} | Diet: ${profile['dietPreferences']}',
-                            overflow: TextOverflow.ellipsis,
+                      return GestureDetector(
+                        onLongPress: () => _showOptionsDialog(context, profile),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Row(
                             children: [
-                              if (profile['isMain'] != 1)
-                                IconButton(
-                                  icon: const Icon(Icons.star_border),
-                                  onPressed: () {
-                                    setState(() {
-                                      _setMainProfile(profile['id']);
-                                    });
-                                  },
+                              Text(
+                                profile['profileIcon'],
+                                style: const TextStyle(fontSize: 40),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "Name: ${profile['name']}",
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (profile['isMain'] == 1) ...[
+                                          const Text(
+                                            " - ",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const Text(
+                                            "Set as main profile",
+                                            style: TextStyle(
+                                              fontSize: 14, // Smaller font size to avoid overflow
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text("Age Group: ${profile['isOver18'] == 1 ? 'Over 18' : 'Under 18'}"),
+                                    const SizedBox(height: 8),
+                                    Text("Diet Preferences: ${profile['dietPreferences']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Allergies: ${profile['allergies']}"),
+                                  ],
                                 ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    _deleteProfile(profile['id']);
-                                  });
-                                },
                               ),
                             ],
                           ),
@@ -155,12 +162,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => MealPlanScreen(
-                                userName: mainProfile?['name'] ?? 'User',
+                                userName: profiles.firstWhere((profile) => profile['isMain'] == 1)['name'],
                               ),
                             ),
                           );
                         },
-                        child: Text('Let\'s plan some noms ${mainProfile?['name'] ?? 'User'}'),
+                        child: const Text("Let's plan!"),
                       ),
                       ElevatedButton(
                         onPressed: () {
@@ -171,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           );
                         },
-                        child: const Text('I gotta cook for more people'),
+                        child: const Text('Add Profile'),
                       ),
                     ],
                   ),
@@ -181,6 +188,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         },
       ),
+    );
+  }
+
+  void _showOptionsDialog(BuildContext context, Map<String, dynamic> profile) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Profile Options"),
+          content: const Text("Choose an option:"),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("Set as Main Profile"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _setMainProfile(profile['id']);
+              },
+            ),
+            TextButton(
+              child: const Text("Delete Profile"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteProfile(profile['id']);
+              },
+            ),
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

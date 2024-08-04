@@ -6,7 +6,7 @@ class AllergiesDietScreen extends StatefulWidget {
   final String name;
   final bool isOver18;
 
-  const AllergiesDietScreen({Key? key, required this.name, required this.isOver18}) : super(key: key);
+  const AllergiesDietScreen({super.key, required this.name, required this.isOver18});
 
   @override
   AllergiesDietScreenState createState() => AllergiesDietScreenState();

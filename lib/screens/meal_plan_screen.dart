@@ -5,7 +5,7 @@ import 'package:intl/intl.dart'; // Ensure this is present
 class MealPlanScreen extends StatefulWidget {
   final String userName;
 
-  const MealPlanScreen({Key? key, required this.userName}) : super(key: key);
+  const MealPlanScreen({super.key, required this.userName});
 
   @override
   MealPlanScreenState createState() => MealPlanScreenState();

@@ -11,13 +11,13 @@ class IconScreen extends StatefulWidget {
   final bool isMain;
 
   const IconScreen({
-    Key? key,
+    super.key,
     required this.name,
     required this.isOver18,
     required this.allergies,
     required this.dietPreferences,
     required this.isMain,
-  }) : super(key: key);
+  });
 
   @override
   _IconScreenState createState() => _IconScreenState();
@@ -60,14 +60,6 @@ class _IconScreenState extends State<IconScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(
-                            fontSize: 36.0,
-                          ),
-                        ),
-                      ),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: _profileIcon == emoji
@@ -76,6 +68,14 @@ class _IconScreenState extends State<IconScreen> {
                           width: 2.0,
                         ),
                         borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Center(
+                        child: Text(
+                          emoji,
+                          style: const TextStyle(
+                            fontSize: 36.0,
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -109,7 +109,7 @@ class _IconScreenState extends State<IconScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => ProfileScreen()),
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
   }
 }
