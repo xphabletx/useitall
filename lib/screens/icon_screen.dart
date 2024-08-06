@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/database_helper.dart';
+import '../models/profile.dart';
 import 'profile_screen.dart';
 
 class IconScreen extends StatefulWidget {
   final String name;
-  final bool isOver18;
+  final String ageGroup;
   final List<String> allergies;
   final List<String> dietPreferences;
   final bool isMain;
@@ -13,7 +14,7 @@ class IconScreen extends StatefulWidget {
   const IconScreen({
     super.key,
     required this.name,
-    required this.isOver18,
+    required this.ageGroup,
     required this.allergies,
     required this.dietPreferences,
     required this.isMain,
@@ -24,7 +25,7 @@ class IconScreen extends StatefulWidget {
 }
 
 class _IconScreenState extends State<IconScreen> {
-  late String _profileIcon = '🍏';  // Default emoji
+  late String _profileIcon = '🍏'; // Default emoji
 
   final List<String> _foodEmojis = [
     '🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🍖', '🦴', '🌭', '🍔', '🍟', '🍕', '🌮', '🌯', '🫔', '🥙', '🧆', '🥚', '🍳', '🧀', '🥗', '🍿', '🥫', '🍱', '🍲', '🍜', '🍝', '🍛', '🍣', '🍤', '🍙', '🍚', '🍘', '🍥', '🥟', '🥠', '🥡', '🍢', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍬', '🍭', '🍫', '🍿', '🍩', '🍪', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🍾', '🍶', '🍵', '🫖', '☕', '🧃', '🥤', '🧋', '🧉', '🍽', '🍴', '🥄'
@@ -94,16 +95,18 @@ class _IconScreenState extends State<IconScreen> {
   }
 
   void _submit() async {
-    final profile = {
-      'name': widget.name,
-      'isOver18': widget.isOver18 ? 1 : 0,
-      'allergies': widget.allergies.join(','),
-      'dietPreferences': widget.dietPreferences.join(','),
-      'profileIcon': _profileIcon,
-      'isMain': widget.isMain ? 1 : 0, // Add the isMain field
-    };
+    final profile = Profile(
+      name: widget.name,
+      ageGroup: widget.ageGroup,
+      icon: _profileIcon,
+      dietPreferences: widget.dietPreferences,
+      allergies: widget.allergies,
+      isMain: widget.isMain, // Correctly using the isMain parameter
+    );
 
-    await DatabaseHelper.instance.insertProfile(profile);
+    await DatabaseHelper.instance.createProfile(profile);
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile Created')));
 

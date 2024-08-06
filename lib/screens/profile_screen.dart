@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/database_helper.dart';
+import '../models/profile.dart';
 import 'meal_plan_screen.dart';
 import 'name_age_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late Future<List<Map<String, dynamic>>> _profilesFuture;
+  late Future<List<Profile>> _profilesFuture;
 
   @override
   void initState() {
@@ -58,14 +59,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => MealPlanScreen(userName: '')),
+                  MaterialPageRoute(builder: (context) => const MealPlanScreen(userName: '')),
                 );
               },
             ),
           ],
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<Profile>>(
         future: _profilesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -96,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Row(
                             children: [
                               Text(
-                                profile['profileIcon'],
+                                profile.icon,
                                 style: const TextStyle(fontSize: 40),
                               ),
                               const SizedBox(width: 16),
@@ -108,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            "Name: ${profile['name']}",
+                                            "Name: ${profile.name}",
                                             style: const TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
@@ -116,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        if (profile['isMain'] == 1) ...[
+                                        if (profile.isMain) ...[
                                           const Text(
                                             " - ",
                                             style: TextStyle(
@@ -125,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             ),
                                           ),
                                           const Text(
-                                            "Set as main profile",
+                                            "is the main profile",
                                             style: TextStyle(
                                               fontSize: 14, // Smaller font size to avoid overflow
                                               fontWeight: FontWeight.bold,
@@ -136,11 +137,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 8),
-                                    Text("Age Group: ${profile['isOver18'] == 1 ? 'Over 18' : 'Under 18'}"),
+                                    Text("Age Group: ${profile.ageGroup}"),
                                     const SizedBox(height: 8),
-                                    Text("Diet Preferences: ${profile['dietPreferences']}"),
+                                    Text("Diet Preferences: ${profile.dietPreferences.join(', ')}"),
                                     const SizedBox(height: 8),
-                                    Text("Allergies: ${profile['allergies']}"),
+                                    Text("Allergies: ${profile.allergies.join(', ')}"),
                                   ],
                                 ),
                               ),
@@ -162,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => MealPlanScreen(
-                                userName: profiles.firstWhere((profile) => profile['isMain'] == 1)['name'],
+                                userName: profiles.firstWhere((profile) => profile.isMain).name,
                               ),
                             ),
                           );
@@ -191,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showOptionsDialog(BuildContext context, Map<String, dynamic> profile) {
+  void _showOptionsDialog(BuildContext context, Profile profile) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -199,18 +200,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: const Text("Profile Options"),
           content: const Text("Choose an option:"),
           actions: <Widget>[
-            TextButton(
-              child: const Text("Set as Main Profile"),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _setMainProfile(profile['id']);
-              },
-            ),
+            if (!profile.isMain)
+              TextButton(
+                child: const Text("Set as Main Profile"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _setMainProfile(profile.id!);
+                },
+              ),
             TextButton(
               child: const Text("Delete Profile"),
               onPressed: () {
                 Navigator.of(context).pop();
-                _deleteProfile(profile['id']);
+                _deleteProfile(profile.id!);
               },
             ),
             TextButton(
@@ -234,8 +236,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _deleteProfile(int id) async {
     await DatabaseHelper.instance.deleteProfile(id);
-    setState(() {
-      _profilesFuture = DatabaseHelper.instance.getProfiles();
-});
-}
+    final profiles = await DatabaseHelper.instance.getProfiles();
+    if (profiles.isEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const NameAgeScreen()),
+      );
+    } else {
+      setState(() {
+        _profilesFuture = DatabaseHelper.instance.getProfiles();
+      });
+    }
+  }
 }

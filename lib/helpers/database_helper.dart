@@ -1,17 +1,19 @@
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/meal.dart';
+import '../models/profile.dart';
+
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
-
   static Database? _database;
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('profile.db');
+
+    _database = await _initDB('app.db');
     return _database!;
   }
 
@@ -23,60 +25,72 @@ class DatabaseHelper {
   }
 
   Future _createDB(Database db, int version) async {
-    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-    const textType = 'TEXT NOT NULL';
-    const boolType = 'BOOLEAN NOT NULL';
+    await db.execute('''
+    CREATE TABLE profiles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      ageGroup TEXT,
+      icon TEXT,
+      dietPreferences TEXT,
+      allergies TEXT,
+      isMain INTEGER
+    )
+    ''');
 
     await db.execute('''
-CREATE TABLE profiles (
-  id $idType,
-  name $textType,
-  isOver18 $boolType,
-  allergies $textType,
-  dietPreferences $textType,
-  profileIcon $textType,
-  isMain $boolType
-)
+    CREATE TABLE meals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      description TEXT,
+      cuisine TEXT,
+      diet TEXT,
+      ingredientsCount INTEGER,
+      prepTime INTEGER,
+      cookTime INTEGER,
+      imageUrl TEXT,
+      course TEXT
+    )
     ''');
-    debugPrint('Database created with table profiles');
   }
 
-  Future<void> insertProfile(Map<String, dynamic> profile) async {
-    final db = await database;
-    final existingProfiles = await getProfiles();
+  Future<int> createProfile(Profile profile) async {
+    final db = await instance.database;
 
-    // Check if this is the first profile being added
-    if (existingProfiles.isEmpty) {
-      profile['isMain'] = 1; // Set the first profile as main profile
-    } else {
-      profile['isMain'] = 0; // Additional profiles are not main profiles
+    // If no profiles exist, set this profile as the main profile
+    final profiles = await getProfiles();
+    if (profiles.isEmpty) {
+      profile = profile.copyWith(isMain: true);
     }
 
-    await db.insert(
-      'profiles',
-      profile,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    debugPrint('Inserted profile: $profile');
+    return await db.insert('profiles', profile.toMap());
   }
 
-  Future<List<Map<String, dynamic>>> getProfiles() async {
-    final db = await database;
-    final profiles = await db.query('profiles');
-    debugPrint('Fetched profiles: $profiles');
-    return profiles;
-  }
-
-  Future<void> setMainProfile(int id) async {
+  Future<List<Profile>> getProfiles() async {
     final db = await instance.database;
-    await db.update('profiles', {'isMain': 0}, where: 'isMain = 1');
-    await db.update('profiles', {'isMain': 1}, where: 'id = ?', whereArgs: [id]);
-    debugPrint('Set profile $id as main profile');
+    final result = await db.query('profiles');
+    return result.map((json) => Profile.fromMap(json)).toList();
   }
 
   Future<void> deleteProfile(int id) async {
     final db = await instance.database;
     await db.delete('profiles', where: 'id = ?', whereArgs: [id]);
-    debugPrint('Deleted profile: $id');
+
+    // Ensure there's always one main profile
+    final profiles = await getProfiles();
+    if (profiles.isNotEmpty && profiles.every((profile) => !profile.isMain)) {
+      final earliestProfile = profiles.first;
+      await db.update('profiles', {'isMain': 1}, where: 'id = ?', whereArgs: [earliestProfile.id]);
+    }
+  }
+
+  Future<void> setMainProfile(int id) async {
+    final db = await instance.database;
+    await db.update('profiles', {'isMain': 0}, where: 'isMain = ?', whereArgs: [1]);
+    await db.update('profiles', {'isMain': 1}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> createMeal(Meal meal) async {
+    final db = await instance.database;
+    return await db.insert('meals', meal.toMap());
   }
 }

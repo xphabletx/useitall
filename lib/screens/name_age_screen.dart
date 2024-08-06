@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'allergies_diet_screen.dart';
 
 class NameAgeScreen extends StatefulWidget {
-  final Map<String, dynamic>? profile;
-
-  const NameAgeScreen({super.key, this.profile});
+  const NameAgeScreen({super.key});
 
   @override
   _NameAgeScreenState createState() => _NameAgeScreenState();
@@ -13,30 +11,19 @@ class NameAgeScreen extends StatefulWidget {
 
 class _NameAgeScreenState extends State<NameAgeScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  bool _isOver18 = false;
+  final TextEditingController _nameController = TextEditingController();
+  String? _selectedAgeGroup;
 
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-    if (widget.profile != null) {
-      _nameController.text = widget.profile!['name'];
-      _isOver18 = widget.profile!['isOver18'] == 'true';
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
+  final List<String> _ageGroups = [
+    'Under 18',
+    '18 and above',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Profile'),
+        title: const Text('Create Profile - Step 1'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -46,8 +33,6 @@ class _NameAgeScreenState extends State<NameAgeScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                autofocus: true,
-                textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(labelText: 'Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -56,23 +41,43 @@ class _NameAgeScreenState extends State<NameAgeScreen> {
                   return null;
                 },
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Are you over 18?'),
-                  Switch(
-                    value: _isOver18,
-                    onChanged: (value) {
-                      setState(() {
-                        _isOver18 = value;
-                      });
-                    },
-                  ),
-                ],
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                value: _selectedAgeGroup,
+                decoration: const InputDecoration(labelText: 'Age Group'),
+                items: _ageGroups.map((ageGroup) {
+                  return DropdownMenuItem(
+                    value: ageGroup,
+                    child: Text(ageGroup),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAgeGroup = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select an age group';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AllergiesDietScreen(
+                          name: _nameController.text,
+                          ageGroup: _selectedAgeGroup!,
+                        ),
+                      ),
+                    );
+                  }
+                },
                 child: const Text('Next'),
               ),
             ],
@@ -80,19 +85,5 @@ class _NameAgeScreenState extends State<NameAgeScreen> {
         ),
       ),
     );
-  }
-
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AllergiesDietScreen(
-            name: _nameController.text,
-            isOver18: _isOver18,
-          ),
-        ),
-      );
-    }
   }
 }

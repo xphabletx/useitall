@@ -4,9 +4,9 @@ import 'icon_screen.dart';
 
 class AllergiesDietScreen extends StatefulWidget {
   final String name;
-  final bool isOver18;
+  final String ageGroup;
 
-  const AllergiesDietScreen({super.key, required this.name, required this.isOver18});
+  const AllergiesDietScreen({super.key, required this.name, required this.ageGroup});
 
   @override
   AllergiesDietScreenState createState() => AllergiesDietScreenState();
@@ -110,20 +110,20 @@ class AllergiesDietScreenState extends State<AllergiesDietScreen> {
                       MaterialPageRoute(
                         builder: (context) => IconScreen(
                           name: widget.name,
-                          isOver18: widget.isOver18,
+                          ageGroup: widget.ageGroup,
                           allergies: _allergies,
                           dietPreferences: _dietPreferences,
-                          isMain: true, // Set the first profile as the main profile
+                          isMain: false, // Default to false when creating a new profile
                         ),
                       ),
                     );
-                 },
-),
-],
-],
-),
-),
-),
-);
-}
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
