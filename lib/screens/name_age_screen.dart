@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'allergies_diet_screen.dart';
 
 class NameAgeScreen extends StatefulWidget {
-  const NameAgeScreen({super.key});
+  final Map<String, dynamic>? profile;
+
+  const NameAgeScreen({super.key, this.profile});
 
   @override
   _NameAgeScreenState createState() => _NameAgeScreenState();
@@ -11,13 +13,33 @@ class NameAgeScreen extends StatefulWidget {
 
 class _NameAgeScreenState extends State<NameAgeScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  String? _selectedAgeGroup;
+  late TextEditingController _nameController;
+  bool _isOver18 = false;
+  late FocusNode _nameFocusNode;
 
-  final List<String> _ageGroups = [
-    'Under 18',
-    '18 and above',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _nameFocusNode = FocusNode();
+
+    if (widget.profile != null) {
+      _nameController.text = widget.profile!['name'];
+      _isOver18 = widget.profile!['isOver18'] == 'true';
+    }
+
+    // Set focus on the name text field with keyboard in shift mode
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_nameFocusNode);
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _nameFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,55 +52,64 @@ class _NameAgeScreenState extends State<NameAgeScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'Enter your name:',
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8.0),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                focusNode: _nameFocusNode,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Name',
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return 'Please enter your name';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: _selectedAgeGroup,
-                decoration: const InputDecoration(labelText: 'Age Group'),
-                items: _ageGroups.map((ageGroup) {
-                  return DropdownMenuItem(
-                    value: ageGroup,
-                    child: Text(ageGroup),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedAgeGroup = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select an age group';
-                  }
-                  return null;
-                },
+              const SizedBox(height: 16.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Over 18?',
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                  ),
+                  Switch(
+                    value: _isOver18,
+                    onChanged: (value) {
+                      setState(() {
+                        _isOver18 = value;
+                      });
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AllergiesDietScreen(
-                          name: _nameController.text,
-                          ageGroup: _selectedAgeGroup!,
+              const SizedBox(height: 16.0),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AllergiesDietScreen(
+                            name: _nameController.text,
+                            ageGroup: _isOver18 ? 'Over 18' : 'Under 18',
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Next'),
+                      );
+                    }
+                  },
+                  child: const Text('Next'),
+                ),
               ),
             ],
           ),

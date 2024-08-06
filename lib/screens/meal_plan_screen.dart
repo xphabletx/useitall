@@ -112,7 +112,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
                 child: Column(
                   children: [
                     const Text(
-                      'Highlight your start and then end dates for the meal plan, like you\'re booking a food holiday!',
+                      'Highlight your start and end dates for the meal plan, like you\'re booking a food holiday!',
                       style: TextStyle(fontSize: 16.0),
                     ),
                     const SizedBox(height: 10),
