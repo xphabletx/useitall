@@ -91,6 +91,10 @@ class DatabaseHelper {
 
   Future<int> createMeal(Meal meal) async {
     final db = await instance.database;
-    return await db.insert('meals', meal.toMap());
+    // Ensure we are not inserting a header row
+    if (meal.name.toLowerCase() != 'name') {
+      return await db.insert('meals', meal.toMap());
+    }
+    return 0;
   }
 }

@@ -9,6 +9,12 @@ class MealData {
   Future<List<Meal>> getMeals() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.query('meals');
+
+    // Skip the header row if present
+    if (result.isNotEmpty && result.first.values.contains('name')) {
+      result.removeAt(0);
+    }
+
     return result.map((json) => Meal.fromMap(json)).toList();
   }
 
