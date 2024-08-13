@@ -1,17 +1,18 @@
+import 'profile.dart'; // Import Profile model
+
 class Meal {
-  final int? id;
-  final String name;
-  final String description;
-  final String cuisine;
-  final String diet;
-  final int ingredientsCount;
-  final int prepTime;
-  final int cookTime;
-  final String imageUrl;
-  final String course;
+  String name;
+  String description;
+  String cuisine;
+  String diet;
+  int ingredientsCount;
+  int prepTime;
+  int cookTime;
+  String imageUrl;
+  String course;
+  List<Profile>? profiles;
 
   Meal({
-    this.id,
     required this.name,
     required this.description,
     required this.cuisine,
@@ -21,6 +22,7 @@ class Meal {
     required this.cookTime,
     required this.imageUrl,
     required this.course,
+    this.profiles,
   });
 
   factory Meal.fromCsv(List<dynamic> row) {
@@ -39,7 +41,6 @@ class Meal {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'description': description,
       'cuisine': cuisine,
@@ -54,7 +55,6 @@ class Meal {
 
   factory Meal.fromMap(Map<String, dynamic> map) {
     return Meal(
-      id: map['id'],
       name: map['name'],
       description: map['description'],
       cuisine: map['cuisine'],

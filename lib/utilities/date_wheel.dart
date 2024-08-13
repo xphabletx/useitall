@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../utilities/short_date.dart'; // Import the short_date utility
+
 class DateWheel extends StatefulWidget {
   final List<DateTime> dates;
   final DateTime? focusedDate;
   final void Function(int) onSelectedItemChanged;
   final void Function(DateTime) onDateTap;
-  final bool isHorizontal;
 
   const DateWheel({
     super.key,
@@ -13,7 +14,6 @@ class DateWheel extends StatefulWidget {
     required this.focusedDate,
     required this.onSelectedItemChanged,
     required this.onDateTap,
-    this.isHorizontal = false,
   });
 
   @override
@@ -21,193 +21,62 @@ class DateWheel extends StatefulWidget {
 }
 
 class _DateWheelState extends State<DateWheel> {
-  late FixedExtentScrollController _scrollController;
+  late ScrollController _scrollController;
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = FixedExtentScrollController(
-      initialItem: widget.dates.indexOf(widget.focusedDate ?? widget.dates.first),
+    _currentIndex = widget.dates.indexOf(widget.focusedDate ?? widget.dates.first);
+    _scrollController = ScrollController(
+      initialScrollOffset: _currentIndex * 80.0, // Assuming each item width is 80
     );
   }
 
-  @override
-  void didUpdateWidget(covariant DateWheel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.focusedDate != oldWidget.focusedDate) {
-      _scrollController.jumpToItem(widget.dates.indexOf(widget.focusedDate ?? widget.dates.first));
-    }
+  void _onDateTap(int index) {
+    setState(() {
+      _currentIndex = index;
+      widget.onDateTap(widget.dates[index]);
+      _scrollController.animateTo(
+        index * 80.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isHorizontal) {
-      return SizedBox(
-        height: 100,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: widget.dates.length,
-          itemBuilder: (context, index) {
-            final date = widget.dates[index];
-            return GestureDetector(
-              onTap: () {
-                widget.onDateTap(date);
-                _scrollController.animateToItem(
-                  index,
-                  duration: const Duration(seconds: 1),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: Container(
-                alignment: Alignment.center,
-                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _shortWeekday(date),
-                      style: TextStyle(
-                        color: widget.focusedDate == date ? Colors.black : Colors.black,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                      decoration: BoxDecoration(
-                        color: widget.focusedDate == date ? Colors.grey[800] : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Text(
-                        date.day.toString(),
-                        style: TextStyle(
-                          color: widget.focusedDate == date ? Colors.white : Colors.black,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _shortMonth(date),
-                      style: TextStyle(
-                        color: widget.focusedDate == date ? Colors.black : Colors.black,
-                      ),
-                    ),
-                  ],
+    return SizedBox(
+      height: 100, // Adjust based on your design
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        itemCount: widget.dates.length,
+        itemBuilder: (context, index) {
+          final date = widget.dates[index];
+          final isFocused = index == _currentIndex;
+          return GestureDetector(
+            onTap: () => _onDateTap(index),
+            child: Container(
+              width: 80, // Set the width of each date item
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isFocused ? Colors.orange.shade200 : Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${shortWeekday(date)}\n${date.day}\n${shortMonth(date)}', // Correctly formatted date
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isFocused ? 18 : 14,
+                  color: isFocused ? Colors.white : Colors.black,
                 ),
               ),
-            );
-          },
-        ),
-      );
-    } else {
-      return SizedBox(
-        width: 100,
-        child: ListWheelScrollView.useDelegate(
-          itemExtent: 60,
-          diameterRatio: 1.5,
-          physics: const FixedExtentScrollPhysics(),
-          onSelectedItemChanged: widget.onSelectedItemChanged,
-          controller: _scrollController,
-          childDelegate: ListWheelChildBuilderDelegate(
-            childCount: widget.dates.length,
-            builder: (context, index) {
-              final date = widget.dates[index];
-              return GestureDetector(
-                onTap: () {
-                  widget.onDateTap(date);
-                  _scrollController.animateToItem(
-                    index,
-                    duration: const Duration(seconds: 1),
-                    curve: Curves.easeInOut,
-                  );
-                },
-                child: Container(
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _shortWeekday(date),
-                        style: TextStyle(
-                          color: widget.focusedDate == date ? Colors.black : Colors.black,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                        decoration: BoxDecoration(
-                          color: widget.focusedDate == date ? Colors.grey[800] : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: Text(
-                          date.day.toString(),
-                          style: TextStyle(
-                            color: widget.focusedDate == date ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        _shortMonth(date),
-                        style: TextStyle(
-                          color: widget.focusedDate == date ? Colors.black : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    }
-  }
-
-  String _shortWeekday(DateTime date) {
-    switch (date.weekday) {
-      case DateTime.monday:
-        return 'Mon';
-      case DateTime.tuesday:
-        return 'Tue';
-      case DateTime.wednesday:
-        return 'Wed';
-      case DateTime.thursday:
-        return 'Thu';
-      case DateTime.friday:
-        return 'Fri';
-      case DateTime.saturday:
-        return 'Sat';
-      case DateTime.sunday:
-        return 'Sun';
-      default:
-        return '';
-    }
-  }
-
-  String _shortMonth(DateTime date) {
-    switch (date.month) {
-      case DateTime.january:
-        return 'Jan';
-      case DateTime.february:
-        return 'Feb';
-      case DateTime.march:
-        return 'Mar';
-      case DateTime.april:
-        return 'Apr';
-      case DateTime.may:
-        return 'May';
-      case DateTime.june:
-        return 'Jun';
-      case DateTime.july:
-        return 'Jul';
-      case DateTime.august:
-        return 'Aug';
-      case DateTime.september:
-        return 'Sep';
-      case DateTime.october:
-        return 'Oct';
-      case DateTime.november:
-        return 'Nov';
-      case DateTime.december:
-        return 'Dec';
-      default:
-        return '';
-    }
+            ),
+          );
+        },
+      ),
+    );
   }
 }
