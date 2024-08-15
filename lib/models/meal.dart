@@ -10,6 +10,7 @@ class Meal {
   int cookTime;
   String imageUrl;
   String course;
+  List<String> ingredients; // New field to store ingredients
   List<Profile>? profiles;
 
   Meal({
@@ -22,6 +23,7 @@ class Meal {
     required this.cookTime,
     required this.imageUrl,
     required this.course,
+    required this.ingredients, // Initialize ingredients
     this.profiles,
   });
 
@@ -36,6 +38,7 @@ class Meal {
       cookTime: int.tryParse(row[8].toString()) ?? 0,
       imageUrl: row[10] as String,
       course: row[3] as String,
+      ingredients: (row[5] as String).split(','), // Split the ingredients string into a list
     );
   }
 
@@ -50,6 +53,7 @@ class Meal {
       'cookTime': cookTime,
       'imageUrl': imageUrl,
       'course': course,
+      'ingredients': ingredients.join(','), // Store ingredients as a comma-separated string
     };
   }
 
@@ -64,6 +68,7 @@ class Meal {
       cookTime: map['cookTime'],
       imageUrl: map['imageUrl'],
       course: map['course'],
+      ingredients: (map['ingredients'] as String).split(','), // Convert the comma-separated string back into a list
     );
   }
 }

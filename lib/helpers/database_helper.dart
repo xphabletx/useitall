@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart'; // To load the CSV file
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -21,7 +22,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -48,9 +49,81 @@ class DatabaseHelper {
       prepTime INTEGER,
       cookTime INTEGER,
       imageUrl TEXT,
-      course TEXT
+      course TEXT,
+      ingredients TEXT
     )
     ''');
+
+    await db.execute('''
+    CREATE TABLE ingredient_macros (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ingredient_name TEXT,
+      macro_category TEXT,
+      macro_weight INTEGER
+    )
+    ''');
+
+    await _loadIngredientMacros(db); // Load the CSV data into the database
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+      CREATE TABLE ingredient_macros (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ingredient_name TEXT,
+        macro_category TEXT,
+        macro_weight INTEGER
+      )
+      ''');
+
+      await _loadIngredientMacros(db); // Load the CSV data into the database
+    }
+  }
+
+  Future<void> _loadIngredientMacros(Database db) async {
+    final csvData = await rootBundle.loadString('assets/ingredient_category_macros.csv');
+    final lines = csvData.split('\n');
+
+    // Debug print to ensure the CSV data is loaded
+    print('Loaded ${lines.length} lines from ingredient macros CSV');
+
+    for (var line in lines.skip(1)) { // Skip header row
+      final values = line.split(',');
+      if (values.length >= 5) {
+        await db.insert('ingredient_macros', {
+          'ingredient_name': values[1].trim(), // Column B
+          'macro_category': values[4].trim(),  // Column E
+          'macro_weight': _getMacroWeight(values[4].trim()) // Assign weights
+        });
+
+        // Debug print to confirm each insert
+        print('Inserted ingredient macro: ${values[1].trim()} with weight ${_getMacroWeight(values[4].trim())}');
+      }
+    }
+  }
+
+  int _getMacroWeight(String category) {
+    const weights = {
+      'Additive': 3,
+      'Beverage': 1,
+      'Beverage Alcoholic': 2,
+      'Carbohydrate': 6,
+      'Cereal': 5,
+      'Condiment': 1,
+      'Dairy': 8,
+      'Fat': 7,
+      'Fruit': 6,
+      'Fungus': 8,
+      'Herb': 4,
+      'High Sugar': 1,
+      'Oil': 1,
+      'Protein': 10,
+      'Sauce': 1,
+      'Spice': 2,
+      'Vegetable': 9,
+    };
+    return weights[category] ?? 0; // Default to 0 if category is not found
   }
 
   Future<int> createProfile(Profile profile) async {
@@ -96,5 +169,29 @@ class DatabaseHelper {
       return await db.insert('meals', meal.toMap());
     }
     return 0;
+  }
+
+  Future<Map<String, int>> getIngredientWeights(List<String> ingredients) async {
+    final db = await instance.database;
+    final ingredientWeights = <String, int>{};
+
+    for (final ingredient in ingredients) {
+      final result = await db.query(
+        'ingredient_macros',
+        where: 'ingredient_name = ?',
+        whereArgs: [ingredient],
+      );
+
+      if (result.isNotEmpty) {
+        ingredientWeights[ingredient] = result.first['macro_weight'] as int;
+      } else {
+        ingredientWeights[ingredient] = 0; // Default weight if not found
+      }
+
+      // Debug print for each ingredient weight retrieval
+      print('Ingredient: $ingredient, Weight: ${ingredientWeights[ingredient]}');
+    }
+
+    return ingredientWeights;
   }
 }

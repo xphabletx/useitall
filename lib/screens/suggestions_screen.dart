@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../helpers/database_helper.dart';
 import '../models/meal.dart';
 import '../models/profile.dart';
-import '../utilities/change_profile_meal.dart'; // Import the new utility
+import '../utilities/change_profile_meal.dart';
 import '../utilities/date_wheel.dart';
 import '../utilities/meal_data.dart';
 import '../utilities/short_date.dart';
@@ -45,21 +45,21 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     });
   }
 
-Future<Map<DateTime, Map<String, List<Meal>>>> _generateSuggestions() async {
-  final mealData = MealData.instance;
-  final suggestions = <DateTime, Map<String, List<Meal>>>{};
-  final mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
+  Future<Map<DateTime, Map<String, List<Meal>>>> _generateSuggestions() async {
+    final mealData = MealData.instance;
+    final suggestions = <DateTime, Map<String, List<Meal>>>{};
+    final mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
 
-  for (var i = 0; i <= widget.endDate.difference(widget.startDate).inDays; i++) {
-    final date = widget.startDate.add(Duration(days: i));
-    suggestions[date] = {};
-    for (var mealType in mealTypes) {
-      final meal = await mealData.suggestRandomMeal(mealType);
-      suggestions[date]![mealType] = [meal]; // Wrap the meal in a List<Meal>
+    for (var i = 0; i <= widget.endDate.difference(widget.startDate).inDays; i++) {
+      final date = widget.startDate.add(Duration(days: i));
+      suggestions[date] = {};
+      for (var mealType in mealTypes) {
+        final meal = await mealData.suggestRandomMeal(mealType);
+        suggestions[date]![mealType] = [meal]; // Wrap the meal in a List<Meal>
+      }
     }
+    return suggestions;
   }
-  return suggestions;
-}
 
   void _onDateSelected(DateTime date) {
     setState(() {
@@ -79,6 +79,17 @@ Future<Map<DateTime, Map<String, List<Meal>>>> _generateSuggestions() async {
 
   String _getFirstSentence(String description) {
     return '${description.split('.').first}.';
+  }
+
+  /// Calculates the Usey Score for a given meal
+  double _calculateUseyScore(Meal meal) {
+    final mealData = MealData.instance;
+    final ingredients = meal.ingredients; // Access the ingredients directly from the meal
+    final macroScore = mealData.calculateMacroScore(ingredients);
+
+    // Here we can consider a hypothetical number of overlapping ingredients as 5 for demonstration.
+    const overlappingIngredients = 5;
+    return (overlappingIngredients * macroScore) / 100;
   }
 
   Widget _buildMealImage(String imageUrl, bool isExpanded) {
@@ -152,9 +163,12 @@ Future<Map<DateTime, Map<String, List<Meal>>>> _generateSuggestions() async {
                           final meal = entry.value;
                           final isExpanded = _expandedTiles[index * 10 + i] ?? false;
 
+                          // Calculate the Usey Score for each meal
+                          final useyScore = _calculateUseyScore(meal);
+
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                                                        padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(12.0),
@@ -192,6 +206,7 @@ Future<Map<DateTime, Map<String, List<Meal>>>> _generateSuggestions() async {
                                       Text('Ingredients Count: ${meal.ingredientsCount}'),
                                       Text('Prep Time: ${meal.prepTime} mins'),
                                       Text('Cook Time: ${meal.cookTime} mins'),
+                                      Text('Usey Score: ${useyScore.toStringAsFixed(2)}%'), // Display the Usey Score
                                       const SizedBox(height: 10),
                                       const Text(
                                         'Eating:',
