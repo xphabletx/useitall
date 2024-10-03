@@ -81,16 +81,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     return '${description.split('.').first}.';
   }
 
-  /// Calculates the Usey Score for a given meal
-  double _calculateUseyScore(Meal meal) {
-    final mealData = MealData.instance;
-    final ingredients = meal.ingredients; // Access the ingredients directly from the meal
-    final macroScore = mealData.calculateMacroScore(ingredients);
-
-    // Here we can consider a hypothetical number of overlapping ingredients as 5 for demonstration.
-    const overlappingIngredients = 5;
-    return (overlappingIngredients * macroScore) / 100;
-  }
 
   Widget _buildMealImage(String imageUrl, bool isExpanded) {
     return AnimatedContainer(
@@ -163,9 +153,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                           final meal = entry.value;
                           final isExpanded = _expandedTiles[index * 10 + i] ?? false;
 
-                          // Calculate the Usey Score for each meal
-                          final useyScore = _calculateUseyScore(meal);
-
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
                             padding: const EdgeInsets.all(8.0),
@@ -206,7 +193,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                                       Text('Ingredients Count: ${meal.ingredientsCount}'),
                                       Text('Prep Time: ${meal.prepTime} mins'),
                                       Text('Cook Time: ${meal.cookTime} mins'),
-                                      Text('Usey Score: ${useyScore.toStringAsFixed(2)}%'), // Display the Usey Score
                                       const SizedBox(height: 10),
                                       const Text(
                                         'Eating:',

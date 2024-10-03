@@ -1,4 +1,4 @@
-import 'profile.dart'; // Import Profile model
+import 'profile.dart'; 
 
 class Meal {
   String name;
@@ -10,7 +10,8 @@ class Meal {
   int cookTime;
   String imageUrl;
   String course;
-  List<String> ingredients; // New field to store ingredients
+  List<String> ingredients; // Existing field to store ingredients as a list
+  String ingredientsString; // New field to store ingredients as a comma-separated string
   List<Profile>? profiles;
 
   Meal({
@@ -23,22 +24,25 @@ class Meal {
     required this.cookTime,
     required this.imageUrl,
     required this.course,
-    required this.ingredients, // Initialize ingredients
+    required this.ingredients, 
+    required this.ingredientsString, // Initialize ingredientsString
     this.profiles,
   });
 
   factory Meal.fromCsv(List<dynamic> row) {
+    final ingredientsString = row[5] as String;
     return Meal(
       name: row[0] as String,
       description: row[1] as String,
       cuisine: row[2] as String,
       diet: row[4] as String,
-      ingredientsCount: (row[5] as String).split(',').length,
+      ingredientsCount: ingredientsString.split(',').length,
       prepTime: int.tryParse(row[7].toString()) ?? 0,
       cookTime: int.tryParse(row[8].toString()) ?? 0,
       imageUrl: row[10] as String,
       course: row[3] as String,
-      ingredients: (row[5] as String).split(','), // Split the ingredients string into a list
+      ingredients: ingredientsString.split(',').map((ingredient) => ingredient.trim()).toList(), // Trim each ingredient 
+      ingredientsString: ingredientsString, 
     );
   }
 
@@ -53,11 +57,12 @@ class Meal {
       'cookTime': cookTime,
       'imageUrl': imageUrl,
       'course': course,
-      'ingredients': ingredients.join(','), // Store ingredients as a comma-separated string
+      'ingredients': ingredients.join(','), // Store the comma-separated string
     };
   }
 
   factory Meal.fromMap(Map<String, dynamic> map) {
+    final ingredientsString = map['ingredients'] as String;
     return Meal(
       name: map['name'],
       description: map['description'],
@@ -68,7 +73,8 @@ class Meal {
       cookTime: map['cookTime'],
       imageUrl: map['imageUrl'],
       course: map['course'],
-      ingredients: (map['ingredients'] as String).split(','), // Convert the comma-separated string back into a list
+      ingredients: ingredientsString.split(','), 
+      ingredientsString: ingredientsString, 
     );
   }
 }

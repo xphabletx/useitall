@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../utilities/meal_data.dart'; // Import the MealData utility
 import 'suggestions_screen.dart';
 
 class MealPlanScreen extends StatefulWidget {
@@ -80,8 +81,17 @@ class MealPlanScreenState extends State<MealPlanScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_rangeStart != null && _rangeEnd != null) {
+                      // Generate the meal plan and show debug output
+                      await MealData.instance.generateMealPlan(
+                        _rangeEnd!.difference(_rangeStart!).inDays + 1,
+                        _isBreakfastOn,
+                        _isLunchOn,
+                        _isDinnerOn,
+                      );
+                      
+                      // Navigate to the next screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
